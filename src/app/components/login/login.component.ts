@@ -1,8 +1,13 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
-import { AuthServiceService } from 'src/app/auth-service.service';
+import { AuthService } from 'src/app/services/auth.service';
+import { LoginI } from '../../models/login.interface'
+import { UserI } from '../../models/user.interface'
+import { VehiclesService } from 'src/app/services/vehicles.service';
+
 
 @Component({
   selector: 'app-login',
@@ -13,7 +18,8 @@ export class LoginComponent implements OnInit {
   form: FormGroup;
   loading = false;
 
-  constructor(private fb: FormBuilder, private _snackbar: MatSnackBar, private router: Router, private authService: AuthServiceService) { 
+  constructor(private fb: FormBuilder, private _snackbar: MatSnackBar, 
+    private router: Router, private authService: AuthService, private vehiclesService: VehiclesService) { 
     this.form = this.fb.group({
       usuario: ['', Validators.required],
       contrasena: ['', Validators.required]
@@ -22,40 +28,27 @@ export class LoginComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    
   }
 
-  ingresar() {
+  onLogin(data:LoginI){
     
-    console.log(this.form)
-    if(this.form.valid){
-      this.authService.login(this.form.value).subscribe(
-        result =>{
-          if(result.success){
-            console.log(result);
-            this.reLoading()
-          }
-
+    this.authService.login(data).subscribe(
+      (data) => {
+        console.log(data);
+        if(data.codigo == 0){
+          this.vehiclesService.apikey.emit(data);
+          this.reLoading()
         }
-      )
-    }
-    
-    
-    /*
-    const usuario = this.form.value.usuario;
-    const password = this.form.value.contrasena;
-
-    if(usuario == 'luis1' && password == 'admin123'){
-      this.reLoading()
-
-    } else {
-      this.error()
-      this.form.reset()
-      
-    }
-    */
+      },
+      (error) => {
+        console.log(error);
+        this.error_message()
+      },
+    );
   }
 
-  error() {
+  error_message() {
     this._snackbar.open('Usuario o contraseña incorrecto!', '', {
       duration: 5000,
       horizontalPosition: 'center',

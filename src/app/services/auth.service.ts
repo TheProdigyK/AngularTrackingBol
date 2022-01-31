@@ -1,17 +1,16 @@
-import { catchError } from 'rxjs/operators';
-import { baseUrl } from './../environments/environment';
-import { HttpClient, HttpErrorResponse, HttpRequest } from '@angular/common/http';
 import { Injectable } from '@angular/core';
+import { catchError } from 'rxjs/operators';
+import { baseUrl } from '../../environments/environment';
+import { HttpClient, HttpErrorResponse, HttpRequest } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { FormGroup } from '@angular/forms';
-import { LoginI } from '../app/models/login.interface';
-import { UserI } from '../app/models/user.interface';
-
+import { LoginI } from '../../app/models/login.interface';
+import { UserI } from '../../app/models/user.interface';
 
 @Injectable({
   providedIn: 'root'
 })
-export class AuthServiceService {
+export class AuthService {
 
   constructor(private http: HttpClient){ }
   
@@ -40,5 +39,4 @@ export class AuthServiceService {
     return throwError(
       'Something bad happened; please try again later.');
   }
-
 }
