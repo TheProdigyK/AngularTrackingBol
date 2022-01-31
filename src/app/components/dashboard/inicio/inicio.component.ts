@@ -60,7 +60,7 @@ export class InicioComponent implements OnInit, OnChanges {
   set_markers(data: VehiculoI[]){
 
     const headerDict = {
-      'Authorization': "Bearer eyJhbGciOiJIUzUxMiJ9.eyJqdGkiOiJzb2Z0dGVrSldUIiwic3ViIjoicGVkcm8yMDIxIiwiYXV0aG9yaXRpZXMiOlsiUk9MRV9VU0VSIl0sImlhdCI6MTY0MzQ5MzI4OCwiZXhwIjoxNjc1MDI5Mjg4fQ.ex0RW8DA_m1Vis0hNlqcTmrEI1dglhq0XDkWRNaJ9vJFqQwnTtESHaQ7q0zyq7xhUKeEk214Zo6L1JTkrXq9KQ",
+      'Authorization': "",
       'User-T': '1',
     }
     
