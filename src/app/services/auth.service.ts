@@ -3,6 +3,7 @@ import { catchError } from 'rxjs/operators';
 import { baseUrl } from '../../environments/environment';
 import { HttpClient, HttpErrorResponse, HttpRequest } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { FormGroup } from '@angular/forms';
 import { LoginI } from '../../app/models/login.interface';
 import { UserI } from '../../app/models/user.interface';
@@ -23,6 +24,11 @@ export class AuthService {
     //`${baseUrl}login-0.0.1/login/validar/`    
     return this.http.post<UserI>('http://amuyutec.xyz/login-0.0.1/login/validar', data)
       .pipe(catchError(this.handleError))
+      .pipe(
+        map((data: UserI) => {
+          localStorage.setItem('currentUser', JSON.stringify(data));
+          return data
+        }))
     
   }
 

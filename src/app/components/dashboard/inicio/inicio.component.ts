@@ -2,7 +2,11 @@ import { UserI } from './../../../models/user.interface';
 import { VehiculoI } from './../../../models/vehiculo.interface';
 import { RealtimeI } from './../../../models/realtime.interface';
 import { VehiclesService } from 'src/app/services/vehicles.service';
+import { RealtimeService } from 'src/app/services/realtime.service';
+import { switchMap } from 'rxjs/operators';
 import { Component, OnInit, OnChanges, SimpleChanges } from '@angular/core';
+import { Observable, concatMap, interval } from 'rxjs';
+import { from as observableFrom } from 'rxjs';
 
 @Component({
   selector: 'app-inicio',
@@ -11,107 +15,112 @@ import { Component, OnInit, OnChanges, SimpleChanges } from '@angular/core';
 })
 export class InicioComponent implements OnInit, OnChanges {
   center = {lat: -16.529263586728273, lng: -68.1513189385239};
-  zoom = 12;
+  zoom = 10;
   display?: google.maps.LatLngLiteral;
 
-  login_data: any = [];
-  vehicles_data: any = [];
-
-  list_latlon: any[] = [];
+  loginData: any = [];
+  
+  list_latlon: any = [];
   options:any = [];
 
   markers:any = [];
-
-  constructor(private vehiclesService: VehiclesService) {}
+  loadMarkers: Promise<boolean> = Promise.resolve(true);
+  
+  currentUser: UserI;
+  constructor(private vehiclesService: VehiclesService, private realtimeService: RealtimeService) {
+    this.currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+  }
   
   
   markerOptions: google.maps.MarkerOptions = {draggable: false};
   marker = {
     position: {lat: -16.529263586728273, lng: -68.1513189385239},
   }
-  //marker = {
-  //  position: {lat: -16.561770,lng: -68.215810}
-  //}
   
-
-  getdata(){
-    /*
-    this.vehiclesService.apikey.subscribe(
-      login_data => {
-        console.log(login_data);
-        this.login_data = login_data
-        
-      }
-    )*/
-    const headerDict = {
-      'Authorization': "",
-      'User-T': '1',
-    }
-    this.vehiclesService.getVehicles(headerDict).subscribe(
-      (data) => {
-        console.log(data);
-        this.set_markers(data)
-
-      }
-    );
-    
-  }
-
-  set_markers(data: VehiculoI[]){
-
-    const headerDict = {
-      'Authorization': "",
-      'User-T': '1',
-    }
-    
-    let url: string = 'http://amuyutec.xyz/tiempoReal-0.0.1/dispositivo/datos/' + data[1].ccid
-    let msg = '(latitud=-16.561770,longitud=-68.215810,imei=0000010000001Z)'
-    this.list_latlon.push({
-      position: {
-        Lat: this.create_marker(msg).position.Lat,
-        lng: this.center.lng + ((Math.random() - 0.5) * 2) / 10,
-      }
-    });
-      this.vehiclesService.getRealTime(headerDict, url).subscribe(
-        (realtime) => {
-          /*
-          this.list_latlon.push({
-            position: {
-              Lat: this.create_marker(realtime.mensaje).position.Lat,
-              Lng: this.create_marker(realtime.mensaje).position.Lng
-            }
-          });
-          */
-          var options = { icon: data[0].imagen}
-          this.options.push(options)
-          console.log(realtime)
-          console.log(this.list_latlon)
-        }
-    )
-    
-
-  }
-
   create_marker(message: string){
     //placa 5155-AAA
     let split_message = message.split('=');
-    let lat = parseFloat(split_message[1].split(',',1)[0]);
-    let lng = parseFloat(split_message[2].split(',',1)[0]);
-    let marker = {position: {Lat: lat, Lng: lng}};
+    let lat = split_message[1].split(',',1)[0]
+    let lng = split_message[2].split(',',1)[0]
+    var myLatlng = new google.maps.LatLng(parseFloat(lat),parseFloat(lng));
+    let marker = {position: {lat: myLatlng.lat(), lng: myLatlng.lng()}};
     console.log(marker)
     return marker;
 
-
-
-
+  }
+  
+  vehiclesFunction(headerDict: any){
+    this.vehiclesService.getVehicles(headerDict).subscribe(
+      vehicles_data => {
+        console.log(vehicles_data)
+        
+        interval(5000).subscribe(() => {
+          this.realtimeFunction(headerDict, vehicles_data)
+        })
+        
+        //this.realtimeFunction(headerDict, vehicles_data)
+        
+      }
+    )
   }
 
+  realtimeFunction(headerDict: any, vehicles_data: VehiculoI[]){
+    console.log('entry')
+    let img_url: string = ''
+    let vec = []
+    vec.push(vehicles_data[1])
+    observableFrom(vehicles_data).pipe(
+      concatMap(entry => {
+        console.log(entry);
+        img_url = entry.imagen
+        let ccid_ = '8959102072074357364'
+        return this.realtimeService.getRealTime(headerDict, 'http://amuyutec.xyz/tiempoReal-0.0.1/dispositivo/datos/' + entry.ccid
+        )})
+    ).subscribe(
+      realtime => {
+        //console.log(response)
+        var icon = {
+          url: img_url + '#custom_marker', // url + image selector for css
+          scaledSize: new google.maps.Size(64, 64), // scaled size
+          origin: new google.maps.Point(0,0), // origin
+          anchor: new google.maps.Point(0.5, 0.5), // anchor 0.5
+          
+        };
+       
+        this.list_latlon.push({
+          position: {
+            lat: this.create_marker(realtime.mensaje).position.lat,
+            lng: this.create_marker(realtime.mensaje).position.lng,
+          },
+          options: {
+            icon: icon,
+            shape: {
+              coords: [10, 10, 10],
+              type: "circle"
+            }
+          },
+        });
+        
+        
+      },
+      error => console.log(error),
+      () => console.info("ALL REQUEST DONE!!")
+    )
+    
+  }
+  
   ngOnChanges(changes: SimpleChanges): void {
     
   }
   ngOnInit(): void {
-    this.getdata()
-    this.addMarker()
+    
+    console.log(this.currentUser)
+    
+    const headerDict = {
+      'Authorization': this.currentUser.respuesta,
+      'User-T': this.currentUser.id_persona.toString(),
+    }
+    this.vehiclesFunction(headerDict);
     
   }
   initMap(): void{

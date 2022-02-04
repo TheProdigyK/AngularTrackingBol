@@ -5,12 +5,17 @@
             [center]="center"
             [zoom]="zoom"
             >
-            <map-marker [position]="marker.position"
-            [options]="markerOptions"></map-marker>
+            <div *ngIf="loadMarkers | async">
+                <map-marker [position]="marker.position"
+                [options]="markerOptions"></map-marker>
 
-            <map-marker *ngFor="let marker of list_latlon"
-            [position]="marker.position"
-            ></map-marker>
+                <map-marker *ngFor="let marker of list_latlon"
+                [position]="marker.position"
+                [options]="marker.options"
+                
+                ></map-marker>
+            </div>
+            
             
 </google-map>
 </div>
