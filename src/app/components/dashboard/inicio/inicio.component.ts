@@ -25,6 +25,10 @@ export class InicioComponent implements OnInit, OnChanges {
 
   markers:any = [];
   loadMarkers: Promise<boolean> = Promise.resolve(true);
+
+  private bounds?: google.maps.LatLngBounds;
+  private image?: string;
+  private div?: HTMLElement;
   
   currentUser: UserI;
   constructor(private vehiclesService: VehiclesService, private realtimeService: RealtimeService) {
@@ -69,7 +73,7 @@ export class InicioComponent implements OnInit, OnChanges {
     let img_url: string = ''
     let vec = []
     vec.push(vehicles_data[1])
-    observableFrom(vehicles_data).pipe(
+    observableFrom(vec).pipe(
       concatMap(entry => {
         console.log(entry);
         img_url = entry.imagen
@@ -86,6 +90,12 @@ export class InicioComponent implements OnInit, OnChanges {
           anchor: new google.maps.Point(0.5, 0.5), // anchor 0.5
           
         };
+
+        for (const i in this.list_latlon.length){
+          if(this.list_latlon[i] == parseFloat(realtime.id_dispositivo)){
+            this.list_latlon.splice(i, 1)
+          }
+        }
        
         this.list_latlon.push({
           position: {
@@ -94,11 +104,8 @@ export class InicioComponent implements OnInit, OnChanges {
           },
           options: {
             icon: icon,
-            shape: {
-              coords: [10, 10, 10],
-              type: "circle"
-            }
           },
+          id: parseFloat(realtime.id_dispositivo),
         });
         
         
